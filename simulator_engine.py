@@ -27,6 +27,11 @@ class TroopSide:
                 even_level = (level // 2) * 2
                 total_bonus += 2.5 + (even_level / 2) * 2.5
         return total_bonus
+# --- THE FIX: Backward compatibility link ---
+    @property
+    def stats(self):
+        """Redirects legacy engine requests to the newly scaled combat stats."""
+        return self.combat_stats
 
 class CombatMods:
     def __init__(self):
