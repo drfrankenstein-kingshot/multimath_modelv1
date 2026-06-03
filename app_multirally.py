@@ -35,7 +35,7 @@ else:
     # --- SIMULATOR APPLICATION (UNLOCKED) ---
     # =========================================================================
     st.title("⚔️ Kingshot Multi-Rally Tactical Engine")
-    st.caption("Simulate sequential multi-rally Waves ")
+    st.caption("Simulate sequential multi-rally Waves")
     
     if st.sidebar.button("Lock Application"):
         st.session_state["authenticated"] = False
@@ -54,8 +54,8 @@ else:
         
         st.markdown("**Garrison Base Troop Level**")
         gc1, gc2 = st.columns(2)
-        g_tier = gc1.selectbox("Garrison Troop Tier", range(1, 12), index=10, key="gtier") # Default T11
-        g_tg = gc2.selectbox("Garrison Troop TG Level", range(0, 6), index=5, key="gtg")       # Default TG5
+        g_tier = gc1.selectbox("Garrison Troop Tier", range(1, 12), index=10, key="gtier") 
+        g_tg = gc2.selectbox("Garrison Troop TG Level", range(0, 6), index=5, key="gtg")       
         st.markdown("---")
         
         g_inf = st.number_input("Garrison Infantry Count", value=1500000)
@@ -115,18 +115,18 @@ else:
         
         for i, tab in enumerate(wave_tabs):
             with tab:
-                st.subheader(f"Parameters for Rally Wave # {i+1} ")
+                st.subheader(f"Parameters for Rally Wave #{i+1}")
                 
                 w_col1, w_col2 = st.columns(2)
                 
                 with w_col1:
                     st.markdown("**Wave Base Troop Level**")
                     wc1, wc2 = st.columns(2)
-                    w_tier = wc1.selectbox("Wave #{i+1}Troop Tier", range(1, 12), index=9, key=f"wtier_{i}") # Default T10
-                    w_tg = wc2.selectbox("Wave #{i+1} Troop TG level", range(0, 6), index=5, key=f"wtg_{i}")       # Default TG5
+                    w_tier = wc1.selectbox(f"Wave {i+1} Troop Tier", range(1, 12), index=9, key=f"wtier_{i}") 
+                    w_tg = wc2.selectbox(f"Wave {i+1} Troop TG Level", range(0, 6), index=5, key=f"wtg_{i}")       
                     st.markdown("---")
                     
-                    st.markdown("**Troop Configuration **")
+                    st.markdown("**Troop Configuration**")
                     a_inf = st.number_input("Infantry Count", value=600000, key=f"w_inf_{i}")
                     a_cav = st.number_input("Cavalry Count", value=200000, key=f"w_cav_{i}")
                     a_arc = st.number_input("Archer Count", value=200000, key=f"w_arc_{i}")
@@ -294,7 +294,7 @@ else:
                     })
                     
                 with out_col2:
-                    st.markdown("#### Attacker Wave Wave #{i+1}  Performance")
+                    st.markdown("#### Attacker Wave Performance")
                     wave_perf_display = []
                     for w_idx in range(num_waves):
                         avg_w_surv = wave_survivor_tracking[w_idx] / num_runs

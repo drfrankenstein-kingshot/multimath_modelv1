@@ -16,7 +16,6 @@ def get_base_stats(troop_type, tier, tg_level):
     return row[['Attack', 'Defense', 'Lethality', 'Health']].values[0]
 
 class TroopSide:
-    # Notice we removed tg3_ratio and added tg_level
     def __init__(self, troops, stats, leader_heroes, supporter_heroes, tier=10, tg_level=5, widget_levels=None):
         self.troops = np.array(troops, dtype=float)
         self.bonus_stats_percentage = np.array(stats, dtype=float) 
@@ -216,7 +215,7 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
     wave_logs = []
     
     for wave_idx, wave_data in enumerate(rally_waves):
-       attacker = TroopSide(wave_data.troops, wave_data.stats, wave_data.leader_heroes, wave_data.supporter_heroes, tier=wave_data.tier, tg_level=wave_data.tg_level, widget_levels=wave_data.widget_levels)
+        attacker = TroopSide(wave_data.troops, wave_data.stats, wave_data.leader_heroes, wave_data.supporter_heroes, tier=wave_data.tier, tg_level=wave_data.tg_level, widget_levels=wave_data.widget_levels)
         
         a_mods = CombatMods()
         d_mods = CombatMods()
@@ -337,18 +336,6 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
                 squad_power = base_offensive_power * counter_matrix[idx, t_pos]
                 if np.random.rand() < d_mods.dodge: squad_power *= 0.5
                 
-                # Attacker Class Passive Injection Rules
-                if idx == 0 and t_pos == 1: squad_power *= 1.10
-                if idx == 1:
-                    if t_pos == 2: squad_power *= 1.10
-                    if t_pos == 0: squad_power *= 0.90
-                    if np.random.rand() < (0.10 * attacker.tg3_ratio[1]): squad_power *= 2.0
-                if idx == 2:
-                    if t_pos == 0: squad_power *= 1.10
-                    if np.random.rand() < 0.10: squad_power *= 2.0
-                    if np.random.rand() < (0.20 * attacker.tg3_ratio[2]): squad_power *= 1.50
-                if t_pos == 0 and np.random.rand() < (0.25 * current_garrison.tg3_ratio[0]): squad_power *= 0.64
-                
                 squad_defense_pool = eff_d_stats[t_pos, 1] * eff_d_stats[t_pos, 3]
                 squad_losses = (squad_power / squad_defense_pool) * final_d_reduct * combat_scale * d_taken_mult
                 d_loss_pool[t_pos] += squad_losses
@@ -371,18 +358,6 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
                 
                 squad_power = base_offensive_power * counter_matrix[idx, t_pos]
                 if np.random.rand() < a_mods.dodge: squad_power *= 0.5
-                
-                # Defender Class Passive Injection Rules
-                if idx == 0 and t_pos == 1: squad_power *= 1.10
-                if idx == 1:
-                    if t_pos == 2: squad_power *= 1.10
-                    if t_pos == 0: squad_power *= 0.90
-                    if np.random.rand() < (0.10 * current_garrison.tg3_ratio[1]): squad_power *= 2.0
-                if idx == 2:
-                    if t_pos == 0: squad_power *= 1.10
-                    if np.random.rand() < 0.10: squad_power *= 2.0
-                    if np.random.rand() < (0.20 * current_garrison.tg3_ratio[2]): squad_power *= 1.50
-                if t_pos == 0 and np.random.rand() < (0.25 * attacker.tg3_ratio[0]): squad_power *= 0.64
                 
                 squad_defense_pool = eff_a_stats[t_pos, 1] * eff_a_stats[t_pos, 3]
                 squad_losses = (squad_power / squad_defense_pool) * final_a_reduct * combat_scale * a_taken_mult
@@ -417,7 +392,8 @@ if __name__ == "__main__":
         stats=g_stats_init, 
         leader_heroes=["Amadeus", "Hilde", "Marlin"],
         supporter_heroes=["Gordon", "Gordon", "Gordon", "Gordon"],
-        tg3_ratio=[1.0, 1.0, 1.0]
+        tier=11,
+        tg_level=5
     )
     
     # Define Attacker Wave Config
@@ -432,7 +408,8 @@ if __name__ == "__main__":
         stats=w1_stats_init,
         leader_heroes=["Amadeus", "Marlin", "Petra"],
         supporter_heroes=["Chenko", "Chenko", "Chenko", "Chenko"],
-        tg3_ratio=[1.0, 1.0, 1.0]
+        tier=10,
+        tg_level=5
     )
     
     rally_waves_input = [wave1_setup]
