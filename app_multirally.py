@@ -115,14 +115,14 @@ else:
         
         for i, tab in enumerate(wave_tabs):
             with tab:
-                st.subheader(f"Parameters for Rally Wave #{i+1}")
+                st.subheader(f"Parameters for Rally Wave # {i+1} ")
                 
                 w_col1, w_col2 = st.columns(2)
                 
                 with w_col1:
                     st.markdown("**Wave Base Troop Level**")
                     wc1, wc2 = st.columns(2)
-                    w_tier = wc1.selectbox("Wave #{i+1} Troop Tier", range(1, 12), index=9, key=f"wtier_{i}") # Default T10
+                    w_tier = wc1.selectbox("Wave #{i+1}Troop Tier", range(1, 12), index=9, key=f"wtier_{i}") # Default T10
                     w_tg = wc2.selectbox("Wave #{i+1} Troop TG level", range(0, 6), index=5, key=f"wtg_{i}")       # Default TG5
                     st.markdown("---")
                     

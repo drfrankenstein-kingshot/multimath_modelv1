@@ -205,7 +205,7 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
     garrison_fortification = 1.38
     
     hero_db = load_hero_db()
-    current_garrison = TroopSide(garrison.troops, garrison.stats, garrison.leader_heroes, garrison.supporter_heroes, garrison.tg3_ratio)
+    current_garrison = TroopSide(garrison.troops, garrison.stats, garrison.leader_heroes, garrison.supporter_heroes, tier=garrison.tier, tg_level=garrison.tg_level, widget_levels=garrison.widget_levels)
     
     counter_matrix = np.array([
         [1.0, 1.1, 0.9],  # Inf vs [Inf, Cav, Arch]
@@ -216,7 +216,7 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
     wave_logs = []
     
     for wave_idx, wave_data in enumerate(rally_waves):
-        attacker = TroopSide(wave_data.troops, wave_data.stats, wave_data.leader_heroes, wave_data.supporter_heroes, wave_data.tg3_ratio)
+        attacker = TroopSide(wave_data.troops, wave_data.stats, wave_data.leader_heroes, wave_data.supporter_heroes,tier=wave.tier, tg_level=wave.tg_level, widget_levels=wave.widget_levels)
         
         a_mods = CombatMods()
         d_mods = CombatMods()
