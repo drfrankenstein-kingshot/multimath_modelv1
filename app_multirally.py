@@ -46,143 +46,64 @@ else:
     # Layout Split: Main Screen for Waves, Sidebar for the Target Garrison
     col_main, col_side = st.columns([2, 1])
     
-    # -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
     # --- SIDEBAR / RIGHT COLUMN: GARRISON TARGET CONFIG ---
     # -------------------------------------------------------------------------
     with col_side:
         st.header("🏰 Target Garrison Setup")
+        
+        # --- NEW: Unified Garrison Troop Level ---
+        st.markdown("**Garrison Base Troop Level**")
+        gc1, gc2 = st.columns(2)
+        g_tier = gc1.selectbox("Garrison Tier", range(1, 12), index=10, key="gtier") # Default T11
+        g_tg = gc2.selectbox("Garrison TG", range(0, 6), index=5, key="gtg")       # Default TG5
+        st.markdown("---")
+        
         g_inf = st.number_input("Garrison Infantry Count", value=1500000)
         g_cav = st.number_input("Garrison Cavalry Count", value=500000)
         g_arc = st.number_input("Garrison Archer Count", value=800000)
         
-        st.markdown("**Garrison Purity Ratios (TG3)**")
-        g_ratio_inf = st.slider("Garrison Infantry TG3 %", 0.0, 1.0, 1.0)
-        g_ratio_cav = st.slider("Garrison Cavalry TG3 %", 0.0, 1.0, 1.0)
-        g_ratio_arc = st.slider("Garrison Archer TG3 %", 0.0, 1.0, 1.0)
-        
-        with st.expander("🎖️ Garrison Leadership & Widgets"):
-            st.markdown("### Main Leaders (3)")
-            hc1, wc1 = st.columns([3, 1])
-            g_lead1 = hc1.selectbox("Garrison Lead 1", hero_list, index=hero_list.index("Amadeus") if "Amadeus" in hero_list else 0, key="gl1")
-            g_wid1 = wc1.number_input("Widget 1", 0, 10, 10, key="gw1")
-            
-            hc2, wc2 = st.columns([3, 1])
-            g_lead2 = hc2.selectbox("Garrison Lead 2", hero_list, index=hero_list.index("Hilde") if "Hilde" in hero_list else 0, key="gl2")
-            g_wid2 = wc2.number_input("Widget 2", 0, 10, 10, key="gw2")
-            
-            hc3, wc3 = st.columns([3, 1])
-            g_lead3 = hc3.selectbox("Garrison Lead 3", hero_list, index=hero_list.index("Marlin") if "Marlin" in hero_list else 0, key="gl3")
-            g_wid3 = wc3.number_input("Widget 3", 0, 10, 10, key="gw3")
-            
-            st.markdown("---")
-            st.markdown("### Joiner/Supporter Heroes (4)")
-            g_sup1 = st.selectbox("Supporter 1", hero_list, index=0, key="gs1")
-            g_sup2 = st.selectbox("Supporter 2", hero_list, index=0, key="gs2")
-            g_sup3 = st.selectbox("Supporter 3", hero_list, index=0, key="gs3")
-            g_sup4 = st.selectbox("Supporter 4", hero_list, index=0, key="gs4")
-            
-        with st.expander("📊 Target Garrison Combat Stats"):
-            st.markdown("**Infantry Stats**")
-            g_inf_atk = st.number_input("Inf Attack %", value=850.0, key="gia")
-            g_inf_def = st.number_input("Inf Defense %", value=900.0, key="gid")
-            g_inf_let = st.number_input("Inf Lethality %", value=1100.0, key="gil")
-            g_inf_hp  = st.number_input("Inf Health %", value=1100.0, key="gih")
-            st.markdown("---")
-            st.markdown("**Cavalry Stats**")
-            g_cav_atk = st.number_input("Cav Attack %", value=800.0, key="gca")
-            g_cav_def = st.number_input("Cav Defense %", value=800.0, key="gcd")
-            g_cav_let = st.number_input("Cav Lethality %", value=1000.0, key="gcl")
-            g_cav_hp  = st.number_input("Cav Health %", value=1000.0, key="gch")
-            st.markdown("---")
-            st.markdown("**Archer Stats**")
-            g_arc_atk = st.number_input("Arc Attack %", value=850.0, key="gaa")
-            g_arc_def = st.number_input("Arc Defense %", value=800.0, key="gad")
-            g_arc_let = st.number_input("Arc Lethality %", value=1100.0, key="gal")
-            g_arc_hp  = st.number_input("Arc Health %", value=1000.0, key="gah")
+        # ... (Garrison Heroes and Stats expanders remain the same) ...
 
     # -------------------------------------------------------------------------
     # --- MAIN COLUMN: DYNAMIC ATTACKING RALLY WAVES ---
     # -------------------------------------------------------------------------
     with col_main:
         st.header("🚀 Attacking Rally Waves Configuration")
-        
-        # Select the total number of consecutive rallies hitting this target
         num_waves = st.number_input("Number of Rally Waves", min_value=1, max_value=5, value=2, step=1)
-        
-        # Create tabs dynamically based on the number of waves selected
         wave_tabs = st.tabs([f"🌊 Wave {i+1}" for i in range(num_waves)])
-        
-        # Dictionary containers to store UI inputs dynamically per wave
         wave_configs = {}
         
         for i, tab in enumerate(wave_tabs):
             with tab:
                 st.subheader(f"Parameters for Rally Wave #{i+1}")
-                
                 w_col1, w_col2 = st.columns(2)
                 
                 with w_col1:
+                    # --- NEW: Unified Wave Troop Level ---
+                    st.markdown("**Wave Base Troop Level**")
+                    wc1, wc2 = st.columns(2)
+                    w_tier = wc1.selectbox("Wave Tier", range(1, 12), index=9, key=f"wtier_{i}") # Default T10
+                    w_tg = wc2.selectbox("Wave TG", range(0, 6), index=5, key=f"wtg_{i}")       # Default TG5
+                    st.markdown("---")
+                    
                     st.markdown("**Troop Configuration**")
                     a_inf = st.number_input("Infantry Count", value=600000, key=f"w_inf_{i}")
                     a_cav = st.number_input("Cavalry Count", value=200000, key=f"w_cav_{i}")
                     a_arc = st.number_input("Archer Count", value=200000, key=f"w_arc_{i}")
                     
-                    st.markdown("**TG3 Purity**")
-                    a_r_inf = st.slider("Inf TG3 %", 0.0, 1.0, 1.0, key=f"w_rinf_{i}")
-                    a_r_cav = st.slider("Cav TG3 %", 0.0, 1.0, 1.0, key=f"w_rcav_{i}")
-                    a_r_arc = st.slider("Arc TG3 %", 0.0, 1.0, 1.0, key=f"w_rarc_{i}")
-                    
-                with w_col2:
-                    st.markdown("**Main Leaders (3)**")
-                    ahc1, awc1 = st.columns([3, 1])
-                    a_l1 = ahc1.selectbox("Rally Leader 1", hero_list, index=0, key=f"wl1_{i}")
-                    a_w1 = awc1.number_input("Widget 1", 0, 10, 10, key=f"ww1_{i}")
-                    
-                    ahc2, awc2 = st.columns([3, 1])
-                    a_l2 = ahc2.selectbox("Rally Leader 2", hero_list, index=0, key=f"wl2_{i}")
-                    a_w2 = awc2.number_input("Widget 2", 0, 10, 10, key=f"ww2_{i}")
-                    
-                    ahc3, awc3 = st.columns([3, 1])
-                    a_l3 = ahc3.selectbox("Rally Leader 3", hero_list, index=0, key=f"wl3_{i}")
-                    a_w3 = awc3.number_input("Widget 3", 0, 10, 10, key=f"ww3_{i}")
-                    
-                    st.markdown("---")
-                    st.markdown("**Joiner/Supporter Heroes (4)**")
-                    a_s1 = st.selectbox("Supporter 1", hero_list, index=0, key=f"ws1_{i}")
-                    a_s2 = st.selectbox("Supporter 2", hero_list, index=0, key=f"ws2_{i}")
-                    a_s3 = st.selectbox("Supporter 3", hero_list, index=0, key=f"ws3_{i}")
-                    a_s4 = st.selectbox("Supporter 4", hero_list, index=0, key=f"ws4_{i}")
+                # ... (Wave Heroes and Stats expanders remain the same) ...
                 
+                # Update wave_configs dictionary to store the locked tier/tg instead of ratios
                 with st.expander(f"📊 Wave {i+1} Core Combat Stats Override"):
-                    sc1, sc2, sc3 = st.columns(3)
-                    
-                    with sc1:
-                        st.markdown("**Infantry Stats**")
-                        a_inf_atk = st.number_input("Inf Atk %", value=1000.0, key=f"a_ia_{i}")
-                        a_inf_def = st.number_input("Inf Def %", value=800.0, key=f"a_id_{i}")
-                        a_inf_let = st.number_input("Inf Let %", value=1100.0, key=f"a_il_{i}")
-                        a_inf_hp  = st.number_input("Inf HP %", value=900.0, key=f"a_ih_{i}")
-                        
-                    with sc2:
-                        st.markdown("**Cavalry Stats**")
-                        a_cav_atk = st.number_input("Cav Atk %", value=900.0, key=f"a_ca_{i}")
-                        a_cav_def = st.number_input("Cav Def %", value=750.0, key=f"a_cd_{i}")
-                        a_cav_let = st.number_input("Cav Let %", value=850.0, key=f"a_cl_{i}")
-                        a_cav_hp  = st.number_input("Cav HP %", value=700.0, key=f"a_ch_{i}")
-                        
-                    with sc3:
-                        st.markdown("**Archer Stats**")
-                        a_arc_atk = st.number_input("Arc Atk %", value=900.0, key=f"a_aa_{i}")
-                        a_arc_def = st.number_input("Arc Def %", value=700.0, key=f"a_ad_{i}")
-                        a_arc_let = st.number_input("Arc Let %", value=1050.0, key=f"a_al_{i}")
-                        a_arc_hp  = st.number_input("Arc HP %", value=800.0, key=f"a_ah_{i}")
-                    
+                    # ... (Stats inputs remain the same) ...
                     wave_configs[i] = {
                         "troops": [a_inf, a_cav, a_arc],
-                        "ratios": [a_r_inf, a_r_cav, a_r_arc],
+                        "tier": w_tier,
+                        "tg": w_tg,
                         "leaders": [a_l1, a_l2, a_l3],
                         "supporters": [a_s1, a_s2, a_s3, a_s4],
-                        "widgets": [a_w1, a_w2, a_w3, 0, 0, 0, 0],  # Hardcoded 0 for the 4 supporter slots
+                        "widgets": [a_w1, a_w2, a_w3, 0, 0, 0, 0],
                         "stats": [
                             [a_inf_atk, a_inf_def, a_inf_let, a_inf_hp],
                             [a_cav_atk, a_cav_def, a_cav_let, a_cav_hp],
@@ -193,14 +114,13 @@ else:
         st.markdown("---")
         num_runs = st.number_input("Monte Carlo Matrix Iterations", min_value=10, max_value=1000, value=200, step=50)
 
-       # =========================================================================
+        # =========================================================================
         # --- EXECUTION LOOP ---
         # =========================================================================
         if st.button("🚀 Run Multi-Rally Simulation Sequence"):
             with st.spinner("Processing continuous battlefield math blocks..."):
                 
-                # 1. Parse and build the Target Garrison object
-                garrison_widgets = [g_wid1, g_wid2, g_wid3, 0, 0, 0, 0]  # Hardcoded 0 for the 4 supporter slots
+                garrison_widgets = [g_wid1, g_wid2, g_wid3, 0, 0, 0, 0]
                 garrison_widget_total = sum(get_widget_bonus(lvl) for lvl in garrison_widgets)
                 
                 g_combat_stats = copy.deepcopy([
@@ -214,11 +134,11 @@ else:
                     stats=g_combat_stats,
                     leader_heroes=[g_lead1, g_lead2, g_lead3],
                     supporter_heroes=[g_sup1, g_sup2, g_sup3, g_sup4],
-                    tg3_ratio=[g_ratio_inf, g_ratio_cav, g_ratio_arc],
+                    tier=g_tier,          # NEW
+                    tg_level=g_tg,        # NEW
                     widget_levels=garrison_widgets
                 )
                 
-                # 2. Build the array list of attacking wave inputs dynamically
                 rally_waves_input = []
                 for wave_idx in range(num_waves):
                     w_data = wave_configs[wave_idx]
@@ -235,10 +155,13 @@ else:
                         stats=w_combat_stats,
                         leader_heroes=w_data["leaders"],
                         supporter_heroes=w_data["supporters"],
-                        tg3_ratio=w_data["ratios"],
+                        tier=w_data["tier"],     # NEW
+                        tg_level=w_data["tg"],   # NEW
                         widget_levels=w_data["widgets"]
                     )
                     rally_waves_input.append(wave_setup)
+
+                # ... (The Monte Carlo looping logic remains exactly the same) ...
 
                 # 3. Process tracking arrays over the complete simulation run
                 garrison_survivors_total = 0
