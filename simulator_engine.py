@@ -278,7 +278,7 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
             
             # Process Real-Time Stochastic Hero Procs
             for proc in a_mods.procs:
-                if random.random() < proc['chance']:
+                if np.random.rand() < proc['chance']:
                     eff = proc['effect']
                     if eff == 'dmg': round_a_dmg_mult += (proc['val'] - 1.0)
                     elif eff == 'atk': round_a_atk_mult += (proc['val'] - 1.0)
