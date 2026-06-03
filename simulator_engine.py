@@ -286,7 +286,7 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
                     elif eff == 'dmg_reduction': a_reduct_proc += proc['val']
                         
             for proc in d_mods.procs:
-                if random.random() < proc['chance']:
+                if np.random.rand() < proc['chance']:
                     eff = proc['effect']
                     if eff == 'dmg': round_d_dmg_mult += (proc['val'] - 1.0)
                     elif eff == 'atk': round_d_atk_mult += (proc['val'] - 1.0)
@@ -306,7 +306,7 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
                 if idx in [0, 2]:
                     t_pos = a_frontline
                 else:  # Cavalry flanking
-                    if d_troops[2] > 0 and random.random() < cav_backline_split:
+                    if d_troops[2] > 0 and np.random.rand() < cav_backline_split:
                         t_pos = 2
                     else:
                         t_pos = a_frontline
@@ -314,19 +314,19 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
                 if t_pos is None or d_troops[t_pos] <= 0: continue
                 
                 squad_power = base_offensive_power * counter_matrix[idx, t_pos]
-                if random.random() < d_mods.dodge: squad_power *= 0.5
+                if np.random.rand() < d_mods.dodge: squad_power *= 0.5
                 
                 # Attacker Class Passive Injection Rules
                 if idx == 0 and t_pos == 1: squad_power *= 1.10
                 if idx == 1:
                     if t_pos == 2: squad_power *= 1.10
                     if t_pos == 0: squad_power *= 0.90
-                    if random.random() < (0.10 * attacker.tg3_ratio[1]): squad_power *= 2.0
+                    if np.random.rand() < (0.10 * attacker.tg3_ratio[1]): squad_power *= 2.0
                 if idx == 2:
                     if t_pos == 0: squad_power *= 1.10
-                    if random.random() < 0.10: squad_power *= 2.0
-                    if random.random() < (0.20 * attacker.tg3_ratio[2]): squad_power *= 1.50
-                if t_pos == 0 and random.random() < (0.25 * current_garrison.tg3_ratio[0]): squad_power *= 0.64
+                    if np.random.rand() < 0.10: squad_power *= 2.0
+                    if np.random.rand() < (0.20 * attacker.tg3_ratio[2]): squad_power *= 1.50
+                if t_pos == 0 and np.random.rand() < (0.25 * current_garrison.tg3_ratio[0]): squad_power *= 0.64
                 
                 squad_defense_pool = eff_d_stats[t_pos, 1] * eff_d_stats[t_pos, 3]
                 squad_losses = (squad_power / squad_defense_pool) * final_d_reduct * combat_scale * d_taken_mult
@@ -341,7 +341,7 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
                 if idx in [0, 2]:
                     t_pos = d_frontline
                 else:
-                    if a_troops[2] > 0 and random.random() < cav_backline_split:
+                    if a_troops[2] > 0 and np.random.rand() < cav_backline_split:
                         t_pos = 2
                     else:
                         t_pos = d_frontline
@@ -349,19 +349,19 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
                 if t_pos is None or a_troops[t_pos] <= 0: continue
                 
                 squad_power = base_offensive_power * counter_matrix[idx, t_pos]
-                if random.random() < a_mods.dodge: squad_power *= 0.5
+                if np.random.rand() < a_mods.dodge: squad_power *= 0.5
                 
                 # Defender Class Passive Injection Rules
                 if idx == 0 and t_pos == 1: squad_power *= 1.10
                 if idx == 1:
                     if t_pos == 2: squad_power *= 1.10
                     if t_pos == 0: squad_power *= 0.90
-                    if random.random() < (0.10 * current_garrison.tg3_ratio[1]): squad_power *= 2.0
+                    if np.random.rand() < (0.10 * current_garrison.tg3_ratio[1]): squad_power *= 2.0
                 if idx == 2:
                     if t_pos == 0: squad_power *= 1.10
-                    if random.random() < 0.10: squad_power *= 2.0
-                    if random.random() < (0.20 * current_garrison.tg3_ratio[2]): squad_power *= 1.50
-                if t_pos == 0 and random.random() < (0.25 * attacker.tg3_ratio[0]): squad_power *= 0.64
+                    if np.random.rand() < 0.10: squad_power *= 2.0
+                    if np.random.rand() < (0.20 * current_garrison.tg3_ratio[2]): squad_power *= 1.50
+                if t_pos == 0 and np.random.rand() < (0.25 * attacker.tg3_ratio[0]): squad_power *= 0.64
                 
                 squad_defense_pool = eff_a_stats[t_pos, 1] * eff_a_stats[t_pos, 3]
                 squad_losses = (squad_power / squad_defense_pool) * final_a_reduct * combat_scale * a_taken_mult
