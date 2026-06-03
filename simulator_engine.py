@@ -1,37 +1,69 @@
 import numpy as np
+import pandas as pd
 import copy
 
+# Load the base stats database globally so it only reads the file once
+try:
+    TROOP_DB = pd.read_csv('troop_stats.csv')
+except FileNotFoundError:
+    print("WARNING: troop_stats.csv not found. Engine requires base stats to run.")
+
+def get_base_stats(troop_type, tier, tg_level):
+    """Fetches the 4 base stats [Atk, Def, Let, HP] for a specific troop type, tier, and TG."""
+    row = TROOP_DB[(TROOP_DB['Type'] == troop_type) & 
+                   (TROOP_DB['Tier'] == tier) & 
+                   (TROOP_DB['TG'] == tg_level)]
+    # Returns a 1D numpy array: [Attack, Defense, Lethality, Health]
+    return row[['Attack', 'Defense', 'Lethality', 'Health']].values[0]
+
 class TroopSide:
-    def __init__(self, troops, stats, leader_heroes, supporter_heroes, tg3_ratio, widget_levels=None):
+    def __init__(self, troops, stats, leader_heroes, supporter_heroes, tg3_ratio, widget_levels=None, tier=10):
         self.troops = np.array(troops, dtype=float)
-        self.base_stats = np.array(stats, dtype=float)
+        self.bonus_stats_percentage = np.array(stats, dtype=float) # Raw percentages from UI
         self.leader_heroes = leader_heroes
         self.supporter_heroes = supporter_heroes
         self.tg3_ratio = np.array(tg3_ratio, dtype=float)
+        self.tier = tier # Defaulting to Tier 10 for endgame calculations
         
-        # --- V2 UPGRADE: Internal Widget Scaling ---
-        # Defaults to max level 10 if no array is passed
+        # Internal Widget Scaling
         self.widget_levels = widget_levels if widget_levels else [10] * 7 
         self.widget_bonus = self.calculate_widget_bonus()
         
-        # Apply the cumulative widget bonus directly to Attack (col 0) and Defense (col 1)
-        self.combat_stats = np.copy(self.base_stats)
-        self.combat_stats[:, 0] += self.widget_bonus
-        self.combat_stats[:, 1] += self.widget_bonus
+        # Apply the cumulative widget bonus directly to Attack and Defense bonus percentages
+        self.bonus_stats_percentage[:, 0] += self.widget_bonus
+        self.bonus_stats_percentage[:, 1] += self.widget_bonus
+
+        # =====================================================================
+        # --- NEW CORE MATH: Purity Slider Integration ---
+        # =====================================================================
+        types = ['infantry', 'cavalry', 'archers']
+        self.true_base_stats = np.zeros((3, 4))
+        
+        # Calculate the weighted base attributes for Inf, Cav, and Arc
+        for i, t_type in enumerate(types):
+            tg5_base = get_base_stats(t_type, self.tier, 5)
+            tg3_base = get_base_stats(t_type, self.tier, 3)
+            
+            # Weighted average based on the UI slider
+            ratio = self.tg3_ratio[i]
+            self.true_base_stats[i] = (ratio * tg3_base) + ((1.0 - ratio) * tg5_base)
+
+        # Calculate Final Combat Values using the game's actual multiplier logic
+        # Formula: True Base * (1 + Bonus% / 100)
+        self.final_combat_stats = self.true_base_stats * (1.0 + (self.bonus_stats_percentage / 100.0))
 
     def calculate_widget_bonus(self):
         total_bonus = 0.0
         for level in self.widget_levels:
             if level > 0:
-                # Steps scale only on even levels
                 even_level = (level // 2) * 2
                 total_bonus += 2.5 + (even_level / 2) * 2.5
         return total_bonus
-# --- THE FIX: Backward compatibility link ---
+
     @property
     def stats(self):
-        """Redirects legacy engine requests to the newly scaled combat stats."""
-        return self.combat_stats
+        """Redirects legacy engine requests to the fully scaled final combat stats."""
+        return self.final_combat_stats
 
 class CombatMods:
     def __init__(self):
