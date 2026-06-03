@@ -193,7 +193,7 @@ else:
         st.markdown("---")
         num_runs = st.number_input("Monte Carlo Matrix Iterations", min_value=10, max_value=1000, value=200, step=50)
 
-        # =========================================================================
+       # =========================================================================
         # --- EXECUTION LOOP ---
         # =========================================================================
         if st.button("🚀 Run Multi-Rally Simulation Sequence"):
@@ -243,7 +243,9 @@ else:
                 # 3. Process tracking arrays over the complete simulation run
                 garrison_survivors_total = 0
                 garrison_breakdown_avg = np.zeros(3)
+                
                 wave_survivor_tracking = {w: 0 for w in range(num_waves)}
+                wave_win_counts = {w: 0 for w in range(num_waves)} # Tracks exact win probability
 
                 for _ in range(int(num_runs)):
                     temp_garrison = copy.deepcopy(garrison_setup)
@@ -255,7 +257,12 @@ else:
                     garrison_breakdown_avg += final_garrison.troops
                     
                     for step_idx, log in enumerate(logs):
-                        wave_survivor_tracking[step_idx] += np.sum(log['attacker_surviving'])
+                        att_surv = np.sum(log['attacker_surviving'])
+                        wave_survivor_tracking[step_idx] += att_surv
+                        
+                        # If attackers have troops left, they "won" this specific combat wave
+                        if att_surv > 0:
+                            wave_win_counts[step_idx] += 1
 
                 # 4. Generate Averages
                 avg_g_survivors = garrison_survivors_total / num_runs
@@ -266,18 +273,24 @@ else:
                 # =========================================================================
                 st.success("Simulation Sequence Complete!")
                 
+                # Check win condition based on whether the final garrison was wiped
                 if avg_g_survivors <= 0:
                     st.markdown("### 🏆 STATUS: <span style='color:red'>GARRISON COMPLETELY BROKEN</span>", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"### 🏰 STATUS: <span style='color:green'>GARRISON HELD (Avg. {avg_g_survivors:,.0f} Troops Left)</span>", unsafe_allow_html=True)
+                    st.markdown(f"### 🏰 STATUS: <span style='color:green'>GARRISON HELD (Avg. {avg_g_survivors:,.0f} Total Troops Left)</span>", unsafe_allow_html=True)
 
                 out_col1, out_col2 = st.columns(2)
                 
                 with out_col1:
                     st.markdown("#### 🛡️ Final Defense Status")
                     st.table({
-                        "Troop Class": ["Frontline Infantry", "Flanking Cavalry", "Backend Archers"],
-                        "Remaining (Avg)": [f"{avg_g_breakdown[0]:,.0f}", f"{avg_g_breakdown[1]:,.0f}", f"{avg_g_breakdown[2]:,.0f}"]
+                        "Troop Class": ["Frontline Infantry", "Flanking Cavalry", "Backend Archers", "Total Remaining"],
+                        "Remaining (Avg)": [
+                            f"{avg_g_breakdown[0]:,.0f}", 
+                            f"{avg_g_breakdown[1]:,.0f}", 
+                            f"{avg_g_breakdown[2]:,.0f}",
+                            f"{avg_g_survivors:,.0f}" # Summed up automatically
+                        ]
                     })
                     
                 with out_col2:
@@ -285,8 +298,11 @@ else:
                     wave_perf_display = []
                     for w_idx in range(num_waves):
                         avg_w_surv = wave_survivor_tracking[w_idx] / num_runs
+                        win_rate_percent = (wave_win_counts[w_idx] / num_runs) * 100
+                        
                         wave_perf_display.append({
                             "Rally Wave": f"Wave #{w_idx + 1}",
+                            "Win Rate %": f"{win_rate_percent:.1f}%", # Shows literal probability of success
                             "Avg Retained Troops": f"{avg_w_surv:,.0f}"
                         })
                     st.table(wave_perf_display)
