@@ -216,7 +216,7 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
     wave_logs = []
     
     for wave_idx, wave_data in enumerate(rally_waves):
-        attacker = TroopSide(wave_data.troops, wave_data.stats, wave_data.leader_heroes, wave_data.supporter_heroes,tier=wave.tier, tg_level=wave.tg_level, widget_levels=wave.widget_levels)
+       attacker = TroopSide(wave_data.troops, wave_data.stats, wave_data.leader_heroes, wave_data.supporter_heroes, tier=wave_data.tier, tg_level=wave_data.tg_level, widget_levels=wave_data.widget_levels)
         
         a_mods = CombatMods()
         d_mods = CombatMods()
