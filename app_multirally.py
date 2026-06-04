@@ -3,13 +3,6 @@ import numpy as np
 import copy
 from simulator_engine import kingshot_multirally_sim2, TroopSide, load_hero_db
 
-# Helper to calculate widget expedition bonus based on even-level steps
-def get_widget_bonus(level):
-    if level == 0:
-        return 0.0
-    even_level = (level // 2) * 2
-    return 2.5 + (even_level / 2) * 2.5
-
 # =========================================================================
 # --- SECURITY GATEWAY ---
 # =========================================================================
@@ -35,13 +28,19 @@ else:
     # --- SIMULATOR APPLICATION (UNLOCKED) ---
     # =========================================================================
     st.title("⚔️ Kingshot Multi-Rally Tactical Engine")
-    st.caption("Simulate sequential multi-rally Waves")
+    st.caption("Simulate sequential multi-rally Waves with granular composition validation.")
     
     if st.sidebar.button("Lock Application"):
         st.session_state["authenticated"] = False
         st.rerun()
 
-    hero_list = sorted(list(load_hero_db().keys()))
+    hero_db = load_hero_db()
+    
+    # Define locked hero options containing "None" at the first index (0)
+    hero_list = ["None"] + sorted(list(hero_db.keys()))
+    infantry_heroes = ["None"] + sorted(["Eric", "Zoe", "Amadeus", "Helga", "Howard"])
+    cavalry_heroes = ["None"] + sorted(["Gordon", "Fahd", "Chenko", "Petra", "Hilde", "Jabel"])
+    archer_heroes = ["None"] + sorted(["Jaegar", "Marlin", "Saul", "Yaenwoo"])
 
     # Layout Split: Main Screen for Waves, Sidebar for the Target Garrison
     col_main, col_side = st.columns([2, 1])
@@ -58,22 +57,56 @@ else:
         g_tg = gc2.selectbox("Garrison Troop TG Level", range(0, 6), index=5, key="gtg")       
         st.markdown("---")
         
-        g_inf = st.number_input("Garrison Infantry Count", value=1500000)
-        g_cav = st.number_input("Garrison Cavalry Count", value=500000)
-        g_arc = st.number_input("Garrison Archer Count", value=800000)
+        g_input_style = st.radio("Garrison Troop Input Style", ("Raw Counts", "Capacity + Ratios"), key="g_style")
+        
+        if g_input_style == "Raw Counts":
+            g_inf = st.number_input("Garrison Infantry Count", value=1500000)
+            g_cav = st.number_input("Garrison Cavalry Count", value=500000)
+            g_arc = st.number_input("Garrison Archer Count", value=800000)
+            g_total_troops = g_inf + g_cav + g_arc
+            g_valid = True
+        else:
+            g_total_troops = st.number_input("Total Garrison Capacity Target", value=2800000, step=100000)
+            st.markdown("**Adjust Garrison Ratios (Must equal 100%)**")
+            
+            g_df = [{"Class": "Infantry", "Ratio %": 50}, 
+                    {"Class": "Cavalry", "Ratio %": 20}, 
+                    {"Class": "Archer", "Ratio %": 30}]
+            
+            edited_g_df = st.data_editor(
+                g_df,
+                column_config={
+                    "Class": st.column_config.TextColumn("Troop Class", disabled=True),
+                    "Ratio %": st.column_config.NumberColumn("Ratio %", min_value=0, max_value=100, step=1, format="%d%%")
+                },
+                disabled=["Class"],
+                hide_index=True,
+                key="g_ratio_editor"
+            )
+            
+            g_total_pct = sum(row["Ratio %"] for row in edited_g_df)
+            if g_total_pct != 100:
+                st.error(f"❌ Garrison ratios sum to **{g_total_pct}%**. Adjust until it equals exactly 100%.")
+                g_valid = False
+            else:
+                g_valid = True
+            
+            g_inf = int(g_total_troops * (edited_g_df[0]["Ratio %"] / 100.0))
+            g_cav = int(g_total_troops * (edited_g_df[1]["Ratio %"] / 100.0))
+            g_arc = int(g_total_troops * (edited_g_df[2]["Ratio %"] / 100.0))
         
         with st.expander("🎖️ Garrison Leadership & Widgets"):
             st.markdown("### Main Leaders (3)")
             hc1, wc1 = st.columns([3, 1])
-            g_lead1 = hc1.selectbox("Garrison Lead 1", hero_list, index=hero_list.index("Amadeus") if "Amadeus" in hero_list else 0, key="gl1")
+            g_lead1 = hc1.selectbox("Infantry Hero", infantry_heroes, index=infantry_heroes.index("Amadeus") if "Amadeus" in infantry_heroes else 0, key="gl1")
             g_wid1 = wc1.number_input("Widget 1", 0, 10, 10, key="gw1")
             
             hc2, wc2 = st.columns([3, 1])
-            g_lead2 = hc2.selectbox("Garrison Lead 2", hero_list, index=hero_list.index("Hilde") if "Hilde" in hero_list else 0, key="gl2")
+            g_lead2 = hc2.selectbox("Cavalry Hero", cavalry_heroes, index=cavalry_heroes.index("Hilde") if "Hilde" in cavalry_heroes else 0, key="gl2")
             g_wid2 = wc2.number_input("Widget 2", 0, 10, 10, key="gw2")
             
             hc3, wc3 = st.columns([3, 1])
-            g_lead3 = hc3.selectbox("Garrison Lead 3", hero_list, index=hero_list.index("Marlin") if "Marlin" in hero_list else 0, key="gl3")
+            g_lead3 = hc3.selectbox("Archer Hero", archer_heroes, index=archer_heroes.index("Marlin") if "Marlin" in archer_heroes else 0, key="gl3")
             g_wid3 = wc3.number_input("Widget 3", 0, 10, 10, key="gw3")
             
             st.markdown("---")
@@ -84,19 +117,16 @@ else:
             g_sup4 = st.selectbox("Supporter 4", hero_list, index=0, key="gs4")
             
         with st.expander("📊 Target Garrison Combat Stats"):
-            st.markdown("**Infantry Stats**")
             g_inf_atk = st.number_input("Inf Attack %", value=850.0, key="gia")
             g_inf_def = st.number_input("Inf Defense %", value=900.0, key="gid")
             g_inf_let = st.number_input("Inf Lethality %", value=1100.0, key="gil")
             g_inf_hp  = st.number_input("Inf Health %", value=1100.0, key="gih")
             st.markdown("---")
-            st.markdown("**Cavalry Stats**")
             g_cav_atk = st.number_input("Cav Attack %", value=800.0, key="gca")
             g_cav_def = st.number_input("Cav Defense %", value=800.0, key="gcd")
             g_cav_let = st.number_input("Cav Lethality %", value=1000.0, key="gcl")
             g_cav_hp  = st.number_input("Cav Health %", value=1000.0, key="gch")
             st.markdown("---")
-            st.markdown("**Archer Stats**")
             g_arc_atk = st.number_input("Arc Attack %", value=850.0, key="gaa")
             g_arc_def = st.number_input("Arc Defense %", value=800.0, key="gad")
             g_arc_let = st.number_input("Arc Lethality %", value=1100.0, key="gal")
@@ -126,23 +156,54 @@ else:
                     w_tg = wc2.selectbox(f"Wave {i+1} Troop TG Level", range(0, 6), index=5, key=f"wtg_{i}")       
                     st.markdown("---")
                     
-                    st.markdown("**Troop Configuration**")
-                    a_inf = st.number_input("Infantry Count", value=600000, key=f"w_inf_{i}")
-                    a_cav = st.number_input("Cavalry Count", value=200000, key=f"w_cav_{i}")
-                    a_arc = st.number_input("Archer Count", value=200000, key=f"w_arc_{i}")
+                    w_input_style = st.radio(f"Wave {i+1} Troop Input Style", ("Raw Counts", "Rally Size + Ratios"), key=f"w_style_{i}")
+                    if w_input_style == "Raw Counts":
+                        a_inf = st.number_input("Infantry Count", value=600000, key=f"w_inf_{i}")
+                        a_cav = st.number_input("Cavalry Count", value=200000, key=f"w_cav_{i}")
+                        a_arc = st.number_input("Archer Count", value=200000, key=f"w_arc_{i}")
+                        st.session_state[f"w_valid_{i}"] = True
+                    else:
+                        a_total_capacity = st.number_input("Rally Size Capacity Limit", value=1000000, step=50000, key=f"w_cap_{i}")
+                        st.markdown(f"**Adjust Wave {i+1} Ratios (Must equal 100%)**")
+                        
+                        w_df = [{"Class": "Infantry", "Ratio %": 60}, 
+                                {"Class": "Cavalry", "Ratio %": 20}, 
+                                {"Class": "Archer", "Ratio %": 20}]
+                        
+                        edited_w_df = st.data_editor(
+                            w_df,
+                            column_config={
+                                "Class": st.column_config.TextColumn("Troop Class", disabled=True),
+                                "Ratio %": st.column_config.NumberColumn("Ratio %", min_value=0, max_value=100, step=1, format="%d%%")
+                            },
+                            disabled=["Class"],
+                            hide_index=True,
+                            key=f"w_ratio_editor_{i}"
+                        )
+                        
+                        w_total_pct = sum(row["Ratio %"] for row in edited_w_df)
+                        if w_total_pct != 100:
+                            st.error(f"❌ Wave {i+1} ratios sum to **{w_total_pct}%**. Adjust until it equals exactly 100%.")
+                            st.session_state[f"w_valid_{i}"] = False
+                        else:
+                            st.session_state[f"w_valid_{i}"] = True
+                        
+                        a_inf = int(a_total_capacity * (edited_w_df[0]["Ratio %"] / 100.0))
+                        a_cav = int(a_total_capacity * (edited_w_df[1]["Ratio %"] / 100.0))
+                        a_arc = int(a_total_capacity * (edited_w_df[2]["Ratio %"] / 100.0))
                     
                 with w_col2:
-                    st.markdown("**Main Leaders (3)**")
+                    st.markdown("**Main Leaders & Widgets**")
                     ahc1, awc1 = st.columns([3, 1])
-                    a_l1 = ahc1.selectbox("Rally Leader 1", hero_list, index=0, key=f"wl1_{i}")
+                    a_l1 = ahc1.selectbox("Infantry Hero", infantry_heroes, index=0, key=f"wl1_{i}")
                     a_w1 = awc1.number_input("Widget 1", 0, 10, 10, key=f"ww1_{i}")
                     
                     ahc2, awc2 = st.columns([3, 1])
-                    a_l2 = ahc2.selectbox("Rally Leader 2", hero_list, index=0, key=f"wl2_{i}")
+                    a_l2 = ahc2.selectbox("Cavalry Hero", cavalry_heroes, index=0, key=f"wl2_{i}")
                     a_w2 = awc2.number_input("Widget 2", 0, 10, 10, key=f"ww2_{i}")
                     
                     ahc3, awc3 = st.columns([3, 1])
-                    a_l3 = ahc3.selectbox("Rally Leader 3", hero_list, index=0, key=f"wl3_{i}")
+                    a_l3 = ahc3.selectbox("Archer Hero", archer_heroes, index=0, key=f"wl3_{i}")
                     a_w3 = awc3.number_input("Widget 3", 0, 10, 10, key=f"ww3_{i}")
                     
                     st.markdown("---")
@@ -193,110 +254,113 @@ else:
         st.markdown("---")
         num_runs = st.number_input("Monte Carlo Matrix Iterations", min_value=10, max_value=1000, value=200, step=50)
 
-        # =========================================================================
-        # --- EXECUTION LOOP ---
-        # =========================================================================
-        if st.button("Run Multi-Rally Simulation Sequence"):
-            with st.spinner("Processing continuous battlefield math blocks..."):
-                
-                # 1. Parse and build the Target Garrison object
-                garrison_widgets = [g_wid1, g_wid2, g_wid3, 0, 0, 0, 0]
-                
-                g_combat_stats = copy.deepcopy([
-                    [g_inf_atk, g_inf_def, g_inf_let, g_inf_hp],
-                    [g_cav_atk, g_cav_def, g_cav_let, g_cav_hp],
-                    [g_arc_atk, g_arc_def, g_arc_let, g_arc_hp]
-                ])
-                
-                garrison_setup = TroopSide(
-                    troops=[g_inf, g_cav, g_arc],
-                    stats=g_combat_stats,
-                    leader_heroes=[g_lead1, g_lead2, g_lead3],
-                    supporter_heroes=[g_sup1, g_sup2, g_sup3, g_sup4],
-                    tier=g_tier,          
-                    tg_level=g_tg,        
-                    widget_levels=garrison_widgets
-                )
-                
-                # 2. Build the array list of attacking wave inputs dynamically
-                rally_waves_input = []
-                for wave_idx in range(num_waves):
-                    w_data = wave_configs[wave_idx]
-                    w_combat_stats = copy.deepcopy(w_data["stats"])
-                        
-                    wave_setup = TroopSide(
-                        troops=w_data["troops"],
-                        stats=w_combat_stats,
-                        leader_heroes=w_data["leaders"],
-                        supporter_heroes=w_data["supporters"],
-                        tier=w_data["tier"],     
-                        tg_level=w_data["tg"],   
-                        widget_levels=w_data["widgets"]
+        # Ensure all data grids conform perfectly to 100% bounds prior to rendering execution hooks
+        all_waves_valid = all(st.session_state.get(f"w_valid_{w_idx}", True) for w_idx in range(num_waves))
+        
+        if all_waves_valid and g_valid:
+            if st.button("Run Multi-Rally Simulation Sequence"):
+                with st.spinner("Processing continuous battlefield math blocks..."):
+                    
+                    # 1. Parse and build the Target Garrison object
+                    garrison_widgets = [g_wid1, g_wid2, g_wid3, 0, 0, 0, 0]
+                    
+                    g_combat_stats = copy.deepcopy([
+                        [g_inf_atk, g_inf_def, g_inf_let, g_inf_hp],
+                        [g_cav_atk, g_cav_def, g_cav_let, g_cav_hp],
+                        [g_arc_atk, g_arc_def, g_arc_let, g_arc_hp]
+                    ])
+                    
+                    garrison_setup = TroopSide(
+                        troops=[g_inf, g_cav, g_arc],
+                        stats=g_combat_stats,
+                        leader_heroes=[g_lead1, g_lead2, g_lead3],
+                        supporter_heroes=[g_sup1, g_sup2, g_sup3, g_sup4],
+                        tier=g_tier,          
+                        tg_level=g_tg,        
+                        widget_levels=garrison_widgets
                     )
-                    rally_waves_input.append(wave_setup)
+                    
+                    # 2. Build the array list of attacking wave inputs dynamically
+                    rally_waves_input = []
+                    for wave_idx in range(num_waves):
+                        w_data = wave_configs[wave_idx]
+                        w_combat_stats = copy.deepcopy(w_data["stats"])
+                            
+                        wave_setup = TroopSide(
+                            troops=w_data["troops"],
+                            stats=w_combat_stats,
+                            leader_heroes=w_data["leaders"],
+                            supporter_heroes=w_data["supporters"],
+                            tier=w_data["tier"],     
+                            tg_level=w_data["tg"],   
+                            widget_levels=w_data["widgets"]
+                        )
+                        rally_waves_input.append(wave_setup)
 
-                # 3. Process tracking arrays over the complete simulation run
-                garrison_survivors_total = 0
-                garrison_breakdown_avg = np.zeros(3)
-                
-                wave_survivor_tracking = {w: 0 for w in range(num_waves)}
-                wave_win_counts = {w: 0 for w in range(num_waves)} 
+                    # 3. Process tracking arrays over the complete simulation run
+                    garrison_survivors_total = 0
+                    garrison_breakdown_avg = np.zeros(3)
+                    
+                    wave_survivor_tracking = {w: 0 for w in range(num_waves)}
+                    wave_win_counts = {w: 0 for w in range(num_waves)} 
 
-                for _ in range(int(num_runs)):
-                    temp_garrison = copy.deepcopy(garrison_setup)
-                    temp_waves = copy.deepcopy(rally_waves_input)
-                    
-                    final_garrison, logs = kingshot_multirally_sim2(temp_waves, temp_garrison)
-                    
-                    garrison_survivors_total += np.sum(final_garrison.troops)
-                    garrison_breakdown_avg += final_garrison.troops
-                    
-                    for step_idx, log in enumerate(logs):
-                        att_surv = np.sum(log['attacker_surviving'])
-                        wave_survivor_tracking[step_idx] += att_surv
+                    for _ in range(int(num_runs)):
+                        temp_garrison = copy.deepcopy(garrison_setup)
+                        temp_waves = copy.deepcopy(rally_waves_input)
                         
-                        if att_surv > 0:
-                            wave_win_counts[step_idx] += 1
-
-                # 4. Generate Averages
-                avg_g_survivors = garrison_survivors_total / num_runs
-                avg_g_breakdown = garrison_breakdown_avg / num_runs
-
-                # =========================================================================
-                # --- RESULTS DISPLAY ---
-                # =========================================================================
-                st.success("Simulation Sequence Complete!")
-                
-                if avg_g_survivors <= 0:
-                    st.markdown("### STATUS: <span style='color:red'>GARRISON COMPLETELY BROKEN</span>", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"### STATUS: <span style='color:green'>GARRISON HELD (Avg. {avg_g_survivors:,.0f} Total Troops Left)</span>", unsafe_allow_html=True)
-
-                out_col1, out_col2 = st.columns(2)
-                
-                with out_col1:
-                    st.markdown("#### Final Defense Status")
-                    st.table({
-                        "Troop Class": ["Infantry", "Cavalry", "Archers", "Total Remaining"],
-                        "Remaining (Avg)": [
-                            f"{avg_g_breakdown[0]:,.0f}", 
-                            f"{avg_g_breakdown[1]:,.0f}", 
-                            f"{avg_g_breakdown[2]:,.0f}",
-                            f"{avg_g_survivors:,.0f}" 
-                        ]
-                    })
-                    
-                with out_col2:
-                    st.markdown("#### Attacker Wave Performance")
-                    wave_perf_display = []
-                    for w_idx in range(num_waves):
-                        avg_w_surv = wave_survivor_tracking[w_idx] / num_runs
-                        win_rate_percent = (wave_win_counts[w_idx] / num_runs) * 100
+                        final_garrison, logs = kingshot_multirally_sim2(temp_waves, temp_garrison)
                         
-                        wave_perf_display.append({
-                            "Rally Wave": f"Wave #{w_idx + 1}",
-                            "T-Level": f"T{wave_configs[w_idx]['tier']} TG{wave_configs[w_idx]['tg']}",
-                            "Win Rate %": f"{win_rate_percent:.1f}%", 
-                            "Avg Retained Troops": f"{avg_w_surv:,.0f}"
+                        garrison_survivors_total += np.sum(final_garrison.troops)
+                        garrison_breakdown_avg += final_garrison.troops
+                        
+                        for step_idx, log in enumerate(logs):
+                            att_surv = np.sum(log['attacker_surviving'])
+                            wave_survivor_tracking[step_idx] += att_surv
+                            
+                            if att_surv > 0:
+                                wave_win_counts[step_idx] += 1
+
+                    # 4. Generate Averages
+                    avg_g_survivors = garrison_survivors_total / num_runs
+                    avg_g_breakdown = garrison_breakdown_avg / num_runs
+
+                    # =========================================================================
+                    # --- RESULTS DISPLAY ---
+                    # =========================================================================
+                    st.success("Simulation Sequence Complete!")
+                    
+                    if avg_g_survivors <= 0:
+                        st.markdown("### STATUS: <span style='color:red'>GARRISON COMPLETELY BROKEN</span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"### STATUS: <span style='color:green'>GARRISON HELD (Avg. {avg_g_survivors:,.0f} Total Troops Left)</span>", unsafe_allow_html=True)
+
+                    out_col1, out_col2 = st.columns(2)
+                    
+                    with out_col1:
+                        st.markdown("#### Final Defense Status")
+                        st.table({
+                            "Troop Class": ["Infantry", "Cavalry", "Archers", "Total Remaining"],
+                            "Remaining (Avg)": [
+                                f"{avg_g_breakdown[0]:,.0f}", 
+                                f"{avg_g_breakdown[1]:,.0f}", 
+                                f"{avg_g_breakdown[2]:,.0f}",
+                                f"{avg_g_survivors:,.0f}" 
+                            ]
                         })
-                    st.table(wave_perf_display)
+                        
+                    with out_col2:
+                        st.markdown("#### Attacker Wave Performance")
+                        wave_perf_display = []
+                        for w_idx in range(num_waves):
+                            avg_w_surv = wave_survivor_tracking[w_idx] / num_runs
+                            win_rate_percent = (wave_win_counts[w_idx] / num_runs) * 100
+                            
+                            wave_perf_display.append({
+                                "Rally Wave": f"Wave #{w_idx + 1}",
+                                "T-Level": f"T{wave_configs[w_idx]['tier']} TG{wave_configs[w_idx]['tg']}",
+                                "Win Rate %": f"{win_rate_percent:.1f}%", 
+                                "Avg Retained Troops": f"{avg_w_surv:,.0f}"
+                            })
+                        st.table(wave_perf_display)
+        else:
+            st.button("Run Multi-Rally Simulation Sequence", disabled=True, help="Fix troop configuration ratio errors to execute mathematical blocks.")
