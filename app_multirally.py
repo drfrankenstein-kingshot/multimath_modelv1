@@ -201,12 +201,11 @@ else:
                 
                 # 1. Parse and build the Target Garrison object
                 garrison_widgets = [g_wid1, g_wid2, g_wid3, 0, 0, 0, 0]
-                garrison_widget_total = sum(get_widget_bonus(lvl) for lvl in garrison_widgets)
                 
                 g_combat_stats = copy.deepcopy([
-                    [g_inf_atk + garrison_widget_total, g_inf_def + garrison_widget_total, g_inf_let, g_inf_hp],
-                    [g_cav_atk + garrison_widget_total, g_cav_def + garrison_widget_total, g_cav_let, g_cav_hp],
-                    [g_arc_atk + garrison_widget_total, g_arc_def + garrison_widget_total, g_arc_let, g_arc_hp]
+                    [g_inf_atk, g_inf_def, g_inf_let, g_inf_hp],
+                    [g_cav_atk, g_cav_def, g_cav_let, g_cav_hp],
+                    [g_arc_atk, g_arc_def, g_arc_let, g_arc_hp]
                 ])
                 
                 garrison_setup = TroopSide(
@@ -223,13 +222,7 @@ else:
                 rally_waves_input = []
                 for wave_idx in range(num_waves):
                     w_data = wave_configs[wave_idx]
-                    
-                    wave_widget_total = sum(get_widget_bonus(lvl) for lvl in w_data["widgets"])
                     w_combat_stats = copy.deepcopy(w_data["stats"])
-                    
-                    for row in range(3):
-                        w_combat_stats[row][0] += wave_widget_total
-                        w_combat_stats[row][1] += wave_widget_total
                         
                     wave_setup = TroopSide(
                         troops=w_data["troops"],
