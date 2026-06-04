@@ -38,9 +38,10 @@ else:
     
     # Define locked hero options containing "None" at the first index (0)
     hero_list = ["None"] + sorted(list(hero_db.keys()))
-    infantry_heroes = ["None"] + sorted(["Eric", "Zoe", "Amadeus", "Helga", "Howard"])
-    cavalry_heroes = ["None"] + sorted(["Gordon", "Fahd", "Chenko", "Petra", "Hilde", "Jabel"])
-    archer_heroes = ["None"] + sorted(["Jaegar", "Marlin", "Saul", "Yaenwoo"])
+# Master tracking lists updated with custom variants and Gen 4 targets
+    infantry_heroes = ["None"] + sorted(["Eric", "Zoe", "Amadeus", "Helga", "Howard", "Alcar"])
+    cavalry_heroes = ["None"] + sorted(["Gordon", "Fahd", "Chenko", "Petra", "Hilde", "Jabel", "Margot"])
+    archer_heroes = ["None"] + sorted(["Jaegar", "Marlin", "Saul", "Yaenwoo", "Amane", "Quinn", "Rosa"])
 
     # Layout Split: Main Screen for Waves, Sidebar for the Target Garrison
     col_main, col_side = st.columns([2, 1])
