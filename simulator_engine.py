@@ -221,9 +221,9 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
         a_mods = CombatMods()
         d_mods = CombatMods()
         
-        # --- RALLY LEADER SKILLS & WIDGETS ---
+# --- RALLY LEADER SKILLS & WIDGETS ---
         for hero_name in attacker.leader_heroes:
-            if hero_name in hero_db:
+            if hero_name and hero_name != "None" and hero_name in hero_db:
                 hero = hero_db[hero_name]
                 a_mods = apply_skill(hero['skill1'], a_mods)
                 a_mods = apply_skill(hero['skill2'], a_mods)
@@ -233,7 +233,7 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
                     
         # --- GARRISON LEADER SKILLS & WIDGETS ---
         for hero_name in current_garrison.leader_heroes:
-            if hero_name in hero_db:
+            if hero_name and hero_name != "None" and hero_name in hero_db:
                 hero = hero_db[hero_name]
                 d_mods = apply_skill(hero['skill1'], d_mods)
                 d_mods = apply_skill(hero['skill2'], d_mods)
@@ -243,10 +243,10 @@ def kingshot_multirally_sim2(rally_waves, garrison, max_rounds=200):
                     
         # --- SUPPORTER SKILLS ---
         for hero_name in attacker.supporter_heroes:
-            if hero_name in hero_db:
+            if hero_name and hero_name != "None" and hero_name in hero_db:
                 a_mods = apply_skill(hero_db[hero_name]['skill1'], a_mods)
         for hero_name in current_garrison.supporter_heroes:
-            if hero_name in hero_db:
+            if hero_name and hero_name != "None" and hero_name in hero_db:
                 d_mods = apply_skill(hero_db[hero_name]['skill1'], d_mods)
                 
         # --- BASE STAT COMPILATION ---
